@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cyberify RAG Chatbot</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 850px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+
+        h1 {
+            margin-bottom: 5px;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 100px;
+            padding: 12px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+
+        button {
+            margin-top: 10px;
+            padding: 10px 20px;
+            cursor: pointer;
+        }
+
+        #status {
+            margin-top: 15px;
+        }
+
+        #answer {
+            margin-top: 25px;
+            padding: 15px;
+            border: 1px solid #ccc;
+            white-space: pre-wrap;
+        }
+
+        .source {
+            margin-top: 10px;
+            padding: 10px;
+            border: 1px solid #ddd;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>Cyberify RAG Chatbot</h1>
+    <p>Ask questions about the indexed documents.</p>
+
+    <textarea
+        id="question"
+        placeholder="Ask a question..."
+    ></textarea>
+
+    <br>
+
+    <button onclick="askQuestion()">
+        Ask
+    </button>
+
+    <div id="status"></div>
+
+    <div id="answer"></div>
+
+    <div id="sources"></div>
+
+
+    <script>
+        function escapeHtml(text) {
+            const div = document.createElement("div");
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+
+        async function askQuestion() {
+
+            const question =
+                document.getElementById("question").value.trim();
+
+            const status =
+                document.getElementById("status");
+
+            const answerBox =
+                document.getElementById("answer");
+
+            const sourcesBox =
+                document.getElementById("sources");
+
+
+            if (!question) {
+                status.textContent = "Please enter a question.";
+                return;
+            }
+
+
+            status.textContent = "Searching documents...";
+
+            answerBox.innerHTML = "";
+            sourcesBox.innerHTML = "";
+
+
+            try {
+
+                const response = await fetch("/api/ask", {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+
+                    body: JSON.stringify({
+                        question: question
+                    })
+                });
+
+
+                const data = await response.json();
+
+
+                if (!response.ok) {
+                    throw new Error(
+                        data.detail || "Request failed"
+                    );
+                }
+
+
+                status.textContent = "";
+
+
+                answerBox.innerHTML =
+                    "<h3>Answer</h3>" +
+                    "<p>" +
+                    escapeHtml(data.answer) +
+                    "</p>";
+
+
+                if (data.sources && data.sources.length > 0) {
+
+                    sourcesBox.innerHTML =
+                        "<h3>Sources</h3>";
+
+
+                    data.sources.forEach(source => {
+
+                        sourcesBox.innerHTML += `
+                            <div class="source">
+                                <strong>[${source.n}] ${escapeHtml(source.title)}</strong>
+                                <br>
+                                File: ${escapeHtml(source.source)}
+                                <br>
+                                Chunk: ${source.chunk_index}
+                                <br>
+                                Similarity score: ${source.score}
+                            </div>
+                        `;
+                    });
+
+                } else {
+
+                    sourcesBox.innerHTML =
+                        "<p>No sources were used.</p>";
+                }
+
+
+            } catch (error) {
+
+                status.textContent =
+                    "Error: " + error.message;
+            }
+        }
+    </script>
+
+</body>
+</html>

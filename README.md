@@ -1,57 +1,98 @@
-﻿# RAG-cyberify
+# RAG-cyberify
 
-A Retrieval-Augmented Generation (RAG) application for answering questions from local knowledge documents. It ingests text into a PostgreSQL+pgvector-backed index, retrieves the most relevant chunks, and passes the context to an LLM for grounded answers.
+RAG-cyberify is a lightweight Retrieval-Augmented Generation application for grounding answers in local documents. It ingests source content into a PostgreSQL + pgvector database, chunks and embeds the text, retrieves relevant passages, and uses an LLM to answer questions based only on that retrieved context.
+
+## Why this project exists
+
+This project is useful for:
+
+- Q&A over internal docs, resumes, policies, or FAQ content
+- Building a local or self-hosted knowledge assistant
+- Keeping answers grounded in retrieved documents instead of free-form hallucination
+- Serving a simple browser UI and a REST API from the same codebase
 
 ## Features
 
-- Document ingestion from raw text or uploaded text files
-- Chunking and embedding workflow for semantic retrieval
-- PostgreSQL vector search with pgvector-compatible storage
-- Question answering grounded in retrieved context only
+- Document ingestion from raw text or file content
+- Chunking and embeddings for semantic retrieval
+- PostgreSQL + pgvector vector search
+- Context-aware answer generation with OpenAI models
+- FastAPI endpoints for document management and Q&A
 - Simple frontend served from the `static/` folder
-- FastAPI API for ingestion, retrieval, and health checks
+- Tests for ingestion, retrieval, and DB behavior
 
 ## Tech stack
 
 - Python 3.11+
 - FastAPI
-- PostgreSQL + pgvector
-- psycopg
-- OpenAI embeddings and chat models
-- HTML/CSS frontend
+- PostgreSQL with pgvector
+- OpenAI embeddings and chat APIs
+- HTML/CSS/JS frontend
+- pytest for automated tests
 
-## Project structure
+## Repository structure
 
 ```text
 RAG-cyberify/
-├── app/                  # app logic (config, DB, ingestion, retrieval, LLM)
-├── db/                   # schema and database assets
-├── seed/                 # sample knowledge documents
-├── static/               # frontend assets
-├── tests/                # automated tests
-├── .env                  # local secrets (not committed)
-├── .gitignore            # git exclusions
-├── requirements.txt      # Python dependencies
-├── README.md             # project overview and setup guide
-└── .env.example          # example environment file
+├── app/                 # application logic (config, ingestion, retrieval, LLM, API)
+├── db/                  # SQL schema and DB-related assets
+├── seed/                # sample source documents
+├── static/              # frontend HTML/CSS/JS assets
+├── tests/               # automated tests
+├── .env                 # local environment variables (not committed)
+├── .env.example         # example environment configuration
+├── .gitignore           # ignored local files
+├── README.md            # project overview and setup instructions
+├── requirements.txt     # Python dependencies
+└── storage/             # local document storage
 ```
 
 ## Prerequisites
 
-- Python 3.11+
-- PostgreSQL database with the pgvector extension enabled
-- OpenAI API key
+Before starting, make sure you have:
+
+- Python 3.11 or newer
+- PostgreSQL installed and running
+- The pgvector extension enabled in your PostgreSQL instance
+- An OpenAI API key
 
 ## Setup
 
+1. Clone the repository and enter it:
+
 ```bash
-cd C:\Users\Admin\RAG-cyberify
+cd /path/to/RAG-cyberify-master
+```
+
+2. Create and activate a virtual environment:
+
+On macOS/Linux:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+On Windows:
+
+```powershell
 python -m venv .venv
 .venv\Scripts\activate
+```
+
+3. Install dependencies:
+
+```bash
 pip install -r requirements.txt
 ```
 
-Copy `.env.example` to `.env` and fill in the required values:
+4. Create your environment file:
+
+```bash
+cp .env.example .env
+```
+
+Then update `.env` with your values:
 
 ```env
 OPENAI_API_KEY=your_openai_api_key_here
@@ -69,20 +110,22 @@ CHUNK_CHARS=700
 CHUNK_OVERLAP=120
 ```
 
-Make sure the PostgreSQL database exists and the `documents` and `chunks` tables can be created when the app initializes.
+5. Create your PostgreSQL database and ensure the `pgvector` extension is enabled.
 
-## Run the app
+## Running the app
+
+Start the API server:
 
 ```bash
 uvicorn app.main:api --reload
 ```
 
-Then open:
+Then open the app in a browser:
 
 - Frontend: http://127.0.0.1:8000/
 - API docs: http://127.0.0.1:8000/docs
 
-## Core API endpoints
+## API endpoints
 
 ```http
 GET  /api/health
@@ -118,12 +161,15 @@ curl -X POST http://127.0.0.1:8000/api/ask \
 
 ## Testing
 
+Run the automated test suite:
+
 ```bash
 pytest -q
 ```
 
 ## Notes
 
-- The app answers only from retrieved context.
-- It is designed as a grounded document Q&A system, not a general-purpose open-ended chatbot.
-- Frontend files are served from the `static/` directory.
+- The application answers from retrieved context and does not rely on memorized knowledge alone.
+- It is meant to be a grounded document Q&A system rather than a general-purpose chatbot.
+- Frontend assets are served out of the `static/` directory.
+- Local secrets should stay in `.env`, which is intentionally not committed.

@@ -1,0 +1,38 @@
+<script src="http://localhost:8080/web-apps/apps/api/documents/api.js"></script>
+
+<div id="placeholder"></div>
+
+<script>
+const params =
+    new URLSearchParams(window.location.search);
+
+const filename =
+    params.get("filename");
+
+const config = {
+    document: {
+        fileType: "docx",
+        key: filename + "-" + Date.now(),
+        title: filename,
+
+        url:
+            "http://host.docker.internal:8000/api/files/"
+            + filename
+    },
+
+    documentType: "word",
+
+    editorConfig: {
+        mode: "edit",
+
+        callbackUrl:
+            "http://host.docker.internal:8000/api/onlyoffice/callback/"
+            + filename
+    }
+};
+
+new DocsAPI.DocEditor(
+    "placeholder",
+    config
+);
+</script>

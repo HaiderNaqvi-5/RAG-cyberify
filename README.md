@@ -18,6 +18,9 @@ This project is useful for:
 - PostgreSQL + pgvector vector search
 - Context-aware answer generation with OpenAI models
 - FastAPI endpoints for document management and Q&A
+- AI-assisted resume generation with DOCX export and editing
+- Resume guardrails and validation for generated content
+- Signature upload and storage for generated documents
 - Simple frontend served from the `static/` folder
 - Tests for ingestion, retrieval, and DB behavior
 
@@ -34,17 +37,18 @@ This project is useful for:
 
 ```text
 RAG-cyberify/
-├── app/                 # application logic (config, ingestion, retrieval, LLM, API)
+├── app/                 # API, RAG pipeline, resume workflow, and validation
 ├── db/                  # SQL schema and DB-related assets
 ├── seed/                # sample source documents
 ├── static/              # frontend HTML/CSS/JS assets
+├── templates/            # DOCX templates used for resume export
 ├── tests/               # automated tests
 ├── .env                 # local environment variables (not committed)
 ├── .env.example         # example environment configuration
 ├── .gitignore           # ignored local files
 ├── README.md            # project overview and setup instructions
 ├── requirements.txt     # Python dependencies
-└── storage/             # local document storage
+└── storage/             # generated local documents (ignored by Git)
 ```
 
 ## Prerequisites
@@ -134,6 +138,10 @@ POST /api/ingest/file
 GET  /api/documents
 DELETE /api/documents/{document_id}
 POST /api/ask
+POST /api/resume/collect
+POST /api/resume/generate-document
+POST /api/resume/update-document
+POST /api/signature/upload
 ```
 
 ### Example: ingest a document
@@ -158,6 +166,27 @@ curl -X POST http://127.0.0.1:8000/api/ask \
     "top_k": 4
   }'
 ```
+
+### Example: generate a resume
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/resume/generate-document \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Jane Doe",
+    "email": "jane@example.com",
+    "phone": "+1 555 0100",
+    "location": "Remote",
+    "field": "Software Engineering",
+    "education": "BSc Computer Science",
+    "experience": "Backend developer intern",
+    "skills": ["Python", "FastAPI", "PostgreSQL"],
+    "projects": ["Built a document search API"]
+  }'
+```
+
+The generated DOCX is written to `storage/documents/`. These generated files
+are intentionally ignored by Git; only the reusable template is committed.
 
 ## Testing
 

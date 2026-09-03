@@ -1,16 +1,37 @@
+from pathlib import Path
+
+import httpx
+
 from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
-from pathlib import Path
-import httpx
-
-from app.document_parser import extract_docx_text
 
 from app import db, ingest, rag
 from app.config import CHAT_MODEL, EMBEDDING_MODEL, TOP_K
+from app.document_parser import extract_docx_text
 
-api = FastAPI(title="Cyberify RAG", version="1.0")
+from app.routes.resume import router as resume_router
+from app.routes.signature import router as signature_router
+
+
+api = FastAPI(
+    title="Cyberify RAG",
+    version="1.0",
+)
+
+
+api.include_router(
+    resume_router,
+    prefix="/api/resume",
+    tags=["Resume"],
+)
+
+api.include_router(
+    signature_router,
+    prefix="/api/signature",
+    tags=["Signature"],
+)
 DOCUMENT_DIR = Path("storage/documents")
 DOCUMENT_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -21,8 +42,17 @@ class IngestBody(BaseModel):
 
 
 class AskBody(BaseModel):
-    question: str = Field(min_length=3)
-    top_k: int = Field(default=TOP_K, ge=1, le=20)
+    question: str = Field(
+        min_length=3
+    )
+
+    top_k: int = Field(
+        default=TOP_K,
+        ge=1,
+        le=20,
+    )
+
+    source: str | None = None
 
 
 @api.get("/api/health")
@@ -87,7 +117,8 @@ def remove_document(document_id: int):
 def ask(body: AskBody):
     return rag.answer_question(
         body.question,
-        top_k=body.top_k
+        top_k=body.top_k,
+        source=body.source,
     )
 
 

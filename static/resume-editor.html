@@ -1,0 +1,1144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Nova Resume Editor</title>
+
+    <style>
+        :root {
+            --bg: #f3f4f6;
+            --panel: #ffffff;
+            --border: #dedede;
+            --text: #111111;
+            --muted: #6b7280;
+            --dark: #111827;
+            --soft: #f9fafb;
+            --radius: 12px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            margin: 0;
+            width: 100%;
+            min-height: 100%;
+            font-family: Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        body {
+            min-height: 100vh;
+        }
+
+        button,
+        input,
+        textarea {
+            font: inherit;
+        }
+
+        .page {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+            padding: 18px 28px;
+            background: var(--panel);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .brand h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+
+        .brand p {
+            margin: 4px 0 0;
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .top-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .button {
+            border: 0;
+            border-radius: 8px;
+            padding: 11px 17px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .button-primary {
+            background: var(--dark);
+            color: white;
+        }
+
+        .button-secondary {
+            background: white;
+            color: var(--dark);
+            border: 1px solid var(--dark);
+        }
+
+        .button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .workspace {
+            flex: 1;
+            display: grid;
+            grid-template-columns:
+                minmax(340px, 0.8fr)
+                minmax(500px, 1.2fr);
+            gap: 20px;
+            padding: 20px;
+            max-width: 1500px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        .editor-panel,
+        .preview-panel {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+        }
+
+        .editor-panel {
+            padding: 24px;
+            overflow-y: auto;
+        }
+
+        .editor-panel h2 {
+            margin-top: 0;
+            margin-bottom: 6px;
+        }
+
+        .editor-description {
+            margin-top: 0;
+            margin-bottom: 26px;
+            color: var(--muted);
+            line-height: 1.5;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 7px;
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 13px;
+            border: 1px solid #cccccc;
+            border-radius: 8px;
+            outline: none;
+            background: white;
+            color: var(--text);
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            border-color: #555555;
+        }
+
+        .form-group textarea {
+            min-height: 110px;
+            resize: vertical;
+            line-height: 1.5;
+        }
+
+        .form-group textarea.large {
+            min-height: 150px;
+        }
+
+        .editor-status {
+            margin-top: 22px;
+            padding: 14px;
+            border-radius: 8px;
+            background: var(--soft);
+            color: var(--muted);
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .preview-panel {
+            padding: 30px;
+            overflow: auto;
+            background: #e9eaec;
+        }
+
+        .resume-paper {
+            width: min(100%, 800px);
+            min-height: 1050px;
+            margin: 0 auto;
+            padding: 58px 64px;
+            background: white;
+            box-shadow: 0 3px 18px rgba(0, 0, 0, 0.08);
+            font-family: Georgia, "Times New Roman", serif;
+        }
+
+        .resume-name {
+            margin: 0;
+            text-align: center;
+            font-size: 31px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .resume-title {
+            margin-top: 8px;
+            margin-bottom: 10px;
+            text-align: center;
+            font-size: 15px;
+            font-weight: normal;
+        }
+
+        .resume-contact {
+            margin: 0 0 30px;
+            text-align: center;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        .resume-section {
+            margin-top: 24px;
+        }
+
+        .resume-section-title {
+            margin: 0 0 10px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #333333;
+            font-size: 14px;
+            letter-spacing: 0.5px;
+        }
+
+        .resume-section-content {
+            margin: 0;
+            font-size: 13px;
+            line-height: 1.55;
+            white-space: pre-wrap;
+        }
+
+        .skills-list {
+            margin: 0;
+            padding-left: 20px;
+            font-size: 13px;
+            line-height: 1.7;
+        }
+
+        .projects-list {
+            margin: 0;
+            padding-left: 20px;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .empty-preview {
+            color: #999999;
+            font-style: italic;
+        }
+
+        @media (max-width: 1000px) {
+            .workspace {
+                grid-template-columns: 1fr;
+            }
+
+            .preview-panel {
+                min-height: 700px;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .topbar {
+                align-items: flex-start;
+                flex-direction: column;
+                padding: 16px;
+            }
+
+            .workspace {
+                padding: 10px;
+            }
+
+            .editor-panel,
+            .preview-panel {
+                padding: 16px;
+            }
+
+            .resume-paper {
+                min-height: 800px;
+                padding: 34px 25px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+<div class="page">
+
+    <header class="topbar">
+        <div class="brand">
+            <h1>Nova Resume Editor</h1>
+
+            <p>
+                Review and edit your resume before downloading it.
+            </p>
+        </div>
+
+        <div class="top-actions">
+            <button
+                class="button button-primary"
+                id="saveButton"
+                type="button"
+            >
+                Save Changes
+            </button>
+
+            <a
+                class="button button-secondary"
+                id="downloadButton"
+                href="#"
+            >
+                Download DOCX
+            </a>
+        </div>
+    </header>
+
+
+    <main class="workspace">
+
+        <!-- LEFT SIDE: EDITING FORM -->
+        <section class="editor-panel">
+
+            <h2>Edit Resume</h2>
+
+            <p class="editor-description">
+                Edit the content below. Your preview will update
+                immediately.
+            </p>
+
+
+            <div class="form-group">
+                <label for="nameInput">
+                    Name
+                </label>
+
+                <input
+                    id="nameInput"
+                    type="text"
+                >
+            </div>
+
+
+            <div class="form-group">
+                <label for="titleInput">
+                    Professional Title
+                </label>
+
+                <input
+                    id="titleInput"
+                    type="text"
+                >
+            </div>
+
+
+            <div class="form-group">
+                <label for="emailInput">
+                    Email
+                </label>
+
+                <input
+                    id="emailInput"
+                    type="email"
+                >
+            </div>
+
+
+            <div class="form-group">
+                <label for="phoneInput">
+                    Phone
+                </label>
+
+                <input
+                    id="phoneInput"
+                    type="text"
+                >
+            </div>
+
+
+            <div class="form-group">
+                <label for="locationInput">
+                    Location
+                </label>
+
+                <input
+                    id="locationInput"
+                    type="text"
+                >
+            </div>
+
+
+            <div class="form-group">
+                <label for="summaryInput">
+                    Professional Summary
+                </label>
+
+                <textarea
+                    id="summaryInput"
+                    class="large"
+                ></textarea>
+            </div>
+
+
+            <div class="form-group">
+                <label for="skillsInput">
+                    Skills
+                </label>
+
+                <textarea
+                    id="skillsInput"
+                    placeholder="Python, SQL, Machine Learning"
+                ></textarea>
+            </div>
+
+
+            <div class="form-group">
+                <label for="experienceInput">
+                    Experience
+                </label>
+
+                <textarea
+                    id="experienceInput"
+                    class="large"
+                ></textarea>
+            </div>
+
+
+            <div class="form-group">
+                <label for="projectsInput">
+                    Projects
+                </label>
+
+                <textarea
+                    id="projectsInput"
+                    class="large"
+                ></textarea>
+            </div>
+
+
+            <div class="form-group">
+                <label for="educationInput">
+                    Education
+                </label>
+
+                <textarea
+                    id="educationInput"
+                ></textarea>
+            </div>
+
+
+            <div
+                class="editor-status"
+                id="editorStatus"
+            >
+                Loading resume...
+            </div>
+
+        </section>
+
+
+        <!-- RIGHT SIDE: LIVE RESUME PREVIEW -->
+        <section class="preview-panel">
+
+            <article class="resume-paper">
+
+                <h1
+                    class="resume-name"
+                    id="previewName"
+                >
+                    Your Name
+                </h1>
+
+                <h2
+                    class="resume-title"
+                    id="previewTitle"
+                >
+                    Professional Title
+                </h2>
+
+                <p
+                    class="resume-contact"
+                    id="previewContact"
+                >
+                    Email | Phone | Location
+                </p>
+
+
+                <section class="resume-section">
+                    <h3 class="resume-section-title">
+                        SUMMARY
+                    </h3>
+
+                    <p
+                        class="resume-section-content"
+                        id="previewSummary"
+                    ></p>
+                </section>
+
+
+                <section class="resume-section">
+                    <h3 class="resume-section-title">
+                        SKILLS
+                    </h3>
+
+                    <ul
+                        class="skills-list"
+                        id="previewSkills"
+                    ></ul>
+                </section>
+
+
+                <section class="resume-section">
+                    <h3 class="resume-section-title">
+                        EXPERIENCE
+                    </h3>
+
+                    <p
+                        class="resume-section-content"
+                        id="previewExperience"
+                    ></p>
+                </section>
+
+
+                <section class="resume-section">
+                    <h3 class="resume-section-title">
+                        PROJECTS
+                    </h3>
+
+                    <ul
+                        class="projects-list"
+                        id="previewProjects"
+                    ></ul>
+                </section>
+
+
+                <section class="resume-section">
+                    <h3 class="resume-section-title">
+                        EDUCATION
+                    </h3>
+
+                    <p
+                        class="resume-section-content"
+                        id="previewEducation"
+                    ></p>
+                </section>
+
+            </article>
+
+        </section>
+
+    </main>
+</div>
+
+
+<script>
+    const saveButton =
+        document.getElementById("saveButton");
+
+    const downloadButton =
+        document.getElementById("downloadButton");
+
+    const editorStatus =
+        document.getElementById("editorStatus");
+
+
+    const fields = {
+        name:
+            document.getElementById("nameInput"),
+
+        professional_title:
+            document.getElementById("titleInput"),
+
+        email:
+            document.getElementById("emailInput"),
+
+        phone:
+            document.getElementById("phoneInput"),
+
+        location:
+            document.getElementById("locationInput"),
+
+        summary:
+            document.getElementById("summaryInput"),
+
+        skills:
+            document.getElementById("skillsInput"),
+
+        experience:
+            document.getElementById("experienceInput"),
+
+        projects:
+            document.getElementById("projectsInput"),
+
+        education:
+            document.getElementById("educationInput")
+    };
+
+
+    const preview = {
+        name:
+            document.getElementById("previewName"),
+
+        professional_title:
+            document.getElementById("previewTitle"),
+
+        contact:
+            document.getElementById("previewContact"),
+
+        summary:
+            document.getElementById("previewSummary"),
+
+        skills:
+            document.getElementById("previewSkills"),
+
+        experience:
+            document.getElementById("previewExperience"),
+
+        projects:
+            document.getElementById("previewProjects"),
+
+        education:
+            document.getElementById("previewEducation")
+    };
+
+
+    let currentFilename = null;
+
+
+    function getParameters() {
+        const params =
+            new URLSearchParams(
+                window.location.search
+            );
+
+        return {
+            filename:
+                params.get("filename")
+        };
+    }
+
+
+    function getStoredResume() {
+        const stored =
+            sessionStorage.getItem(
+                "novaGeneratedResume"
+            );
+
+        if (!stored) {
+            return null;
+        }
+
+        try {
+            return JSON.parse(stored);
+        } catch (error) {
+            console.error(
+                "Could not parse stored resume:",
+                error
+            );
+
+            return null;
+        }
+    }
+
+
+    function setValue(
+        element,
+        value
+    ) {
+        element.value =
+            value || "";
+    }
+
+
+    function populateEditor(data) {
+        if (!data) {
+            return;
+        }
+
+        setValue(
+            fields.name,
+            data.name
+        );
+
+        setValue(
+            fields.professional_title,
+            data.professional_title
+        );
+
+        setValue(
+            fields.email,
+            data.email
+        );
+
+        setValue(
+            fields.phone,
+            data.phone
+        );
+
+        setValue(
+            fields.location,
+            data.location
+        );
+
+        setValue(
+            fields.summary,
+            data.summary
+        );
+
+        if (
+            Array.isArray(
+                data.skills
+            )
+        ) {
+            setValue(
+                fields.skills,
+                data.skills.join(", ")
+            );
+        } else {
+            setValue(
+                fields.skills,
+                data.skills
+            );
+        }
+
+        setValue(
+            fields.experience,
+            data.experience
+        );
+
+        if (
+            Array.isArray(
+                data.projects
+            )
+        ) {
+            setValue(
+                fields.projects,
+                data.projects.join("\n")
+            );
+        } else {
+            setValue(
+                fields.projects,
+                data.projects
+            );
+        }
+
+        setValue(
+            fields.education,
+            data.education
+        );
+
+        updatePreview();
+    }
+
+
+    function splitSkills(value) {
+        return value
+            .split(",")
+            .map(
+                item =>
+                    item.trim()
+            )
+            .filter(Boolean);
+    }
+
+
+    function splitProjects(value) {
+        return value
+            .split("\n")
+            .map(
+                item =>
+                    item.trim()
+            )
+            .filter(Boolean);
+    }
+
+
+    function setPreviewText(
+        element,
+        value,
+        fallback
+    ) {
+        const cleaned =
+            value.trim();
+
+        if (cleaned) {
+            element.textContent =
+                cleaned;
+
+            element.classList.remove(
+                "empty-preview"
+            );
+        } else {
+            element.textContent =
+                fallback;
+
+            element.classList.add(
+                "empty-preview"
+            );
+        }
+    }
+
+
+    function updateList(
+        element,
+        items
+    ) {
+        element.innerHTML = "";
+
+        if (!items.length) {
+            const item =
+                document.createElement("li");
+
+            item.textContent =
+                "Not provided";
+
+            item.className =
+                "empty-preview";
+
+            element.appendChild(item);
+
+            return;
+        }
+
+        items.forEach(
+            value => {
+                const item =
+                    document.createElement(
+                        "li"
+                    );
+
+                item.textContent =
+                    value;
+
+                element.appendChild(
+                    item
+                );
+            }
+        );
+    }
+
+
+    function updatePreview() {
+        setPreviewText(
+            preview.name,
+            fields.name.value,
+            "Your Name"
+        );
+
+        setPreviewText(
+            preview.professional_title,
+            fields.professional_title.value,
+            "Professional Title"
+        );
+
+
+        const contactParts = [
+            fields.email.value.trim(),
+            fields.phone.value.trim(),
+            fields.location.value.trim()
+        ].filter(Boolean);
+
+
+        setPreviewText(
+            preview.contact,
+            contactParts.join(" | "),
+            "Email | Phone | Location"
+        );
+
+
+        setPreviewText(
+            preview.summary,
+            fields.summary.value,
+            "Professional summary"
+        );
+
+
+        updateList(
+            preview.skills,
+            splitSkills(
+                fields.skills.value
+            )
+        );
+
+
+        setPreviewText(
+            preview.experience,
+            fields.experience.value,
+            "Experience"
+        );
+
+
+        updateList(
+            preview.projects,
+            splitProjects(
+                fields.projects.value
+            )
+        );
+
+
+        setPreviewText(
+            preview.education,
+            fields.education.value,
+            "Education"
+        );
+    }
+
+
+    function collectEditedResume() {
+        return {
+            name:
+                fields.name.value.trim(),
+
+            professional_title:
+                fields
+                    .professional_title
+                    .value
+                    .trim(),
+
+            email:
+                fields.email.value.trim(),
+
+            phone:
+                fields.phone.value.trim(),
+
+            location:
+                fields.location.value.trim(),
+
+            summary:
+                fields.summary.value.trim(),
+
+            skills:
+                splitSkills(
+                    fields.skills.value
+                ),
+
+            experience:
+                fields
+                    .experience
+                    .value
+                    .trim(),
+
+            projects:
+                splitProjects(
+                    fields.projects.value
+                ),
+
+            education:
+                fields
+                    .education
+                    .value
+                    .trim()
+        };
+    }
+
+
+    Object.values(
+        fields
+    ).forEach(
+        field => {
+            field.addEventListener(
+                "input",
+                updatePreview
+            );
+        }
+    );
+
+
+    saveButton.addEventListener(
+    "click",
+    async function () {
+
+        const editedResume =
+            collectEditedResume();
+
+        if (!currentFilename) {
+            editorStatus.textContent =
+                "Cannot save because the resume filename is missing.";
+
+            return;
+        }
+
+        const payload = {
+            filename:
+                currentFilename,
+
+            ...editedResume
+        };
+
+        console.log(
+            "Saving edited resume:",
+            payload
+        );
+
+        editorStatus.textContent =
+            "Saving changes...";
+
+        saveButton.disabled =
+            true;
+
+        try {
+            const response =
+                await fetch(
+                    "/api/resume/update-document",
+                    {
+                        method: "POST",
+
+                        headers: {
+                            "Content-Type":
+                                "application/json"
+                        },
+
+                        body:
+                            JSON.stringify(
+                                payload
+                            )
+                    }
+                );
+
+            let result;
+
+            try {
+                result =
+                    await response.json();
+            } catch {
+                throw new Error(
+                    "The server returned an invalid response."
+                );
+            }
+
+            if (!response.ok) {
+                throw new Error(
+                    result?.detail ||
+                    `Server returned ${response.status}.`
+                );
+            }
+
+            if (!result?.success) {
+                throw new Error(
+                    "Resume update did not complete."
+                );
+            }
+
+            currentFilename =
+                result.filename;
+
+            downloadButton.href =
+                result.file_url;
+
+            sessionStorage.setItem(
+                "novaGeneratedResume",
+                JSON.stringify(
+                    editedResume
+                )
+            );
+
+            sessionStorage.setItem(
+                "novaEditedResume",
+                JSON.stringify(
+                    editedResume
+                )
+            );
+
+            editorStatus.textContent =
+                "✓ Resume updated successfully. DOCX and RAG are now synced.";
+
+            console.log(
+                "Resume updated:",
+                result
+            );
+
+        } catch (error) {
+            console.error(
+                "Resume update failed:",
+                error
+            );
+
+            editorStatus.textContent =
+                "Could not save changes: " +
+                error.message;
+
+        } finally {
+            saveButton.disabled =
+                false;
+        }
+    }
+);
+
+    function initialiseEditor() {
+        const params =
+            getParameters();
+
+        currentFilename =
+            params.filename;
+
+        if (currentFilename) {
+            downloadButton.href =
+                "/api/files/" +
+                encodeURIComponent(
+                    currentFilename
+                );
+        } else {
+            downloadButton.style.display =
+                "none";
+        }
+
+
+        const storedResume =
+            getStoredResume();
+
+        if (!storedResume) {
+            editorStatus.textContent =
+                "No generated resume data was found.";
+
+            return;
+        }
+
+
+        populateEditor(
+            storedResume
+        );
+
+        editorStatus.textContent =
+            "Resume loaded. You can edit any section.";
+    }
+
+
+    initialiseEditor();
+</script>
+
+</body>
+</html>

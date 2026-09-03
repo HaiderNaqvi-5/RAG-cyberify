@@ -3,84 +3,116 @@ from app.retrieval import search
 from app.config import TOP_K
 
 
-
 SYSTEM_PROMPT = """
 You are the Cyberify assistant.
 
-Rules:
-1. Answer ONLY from the provided CONTEXT.
+Rules you must follow:
+
+1. Answer ONLY from the CONTEXT below.
 2. Never use outside knowledge.
-3. Read ALL retrieved context blocks before answering.
-4. Prefer the context that most directly answers the question,
-   even if it is not source [1].
-5. If multiple sources are relevant, compare them before answering.
-6. If the context does not contain the answer, reply exactly:
+3. If the context does not contain the answer, reply exactly:
    "I could not find this in the documents."
-7. Cite supporting source numbers in square brackets, like [1].
-8. Keep answers brief and factual.
+4. Cite the source number in square brackets after every fact,
+   like [1].
+5. Never invent information that is not present in the context.
+6. Be brief and clear.
 """
 
 
-def build_context(hits: list[dict]) -> str:
+def build_context(
+    hits: list[dict],
+) -> str:
+    """
+    Number every retrieved chunk so the model
+    can cite the source.
+    """
 
     blocks = []
 
-    for i, hit in enumerate(hits, start=1):
-
+    for i, hit in enumerate(
+        hits,
+        start=1,
+    ):
         blocks.append(
             f"[{i}] "
-            f"({hit['source']}, chunk {hit['chunk_index']})\n"
+            f"({hit['source']}, "
+            f"chunk {hit['chunk_index']})\n"
             f"{hit['content']}"
         )
 
-    return "\n\n".join(blocks)
+    return "\n\n".join(
+        blocks
+    )
 
 
 def answer_question(
     question: str,
-    top_k: int = TOP_K
+    top_k: int = TOP_K,
+    source: str | None = None,
 ) -> dict:
+    """
+    Answer a question using RAG.
+
+    source=None:
+        Search all documents.
+
+    source="resume.docx":
+        Search only that document.
+    """
 
     hits = search(
         question,
-        top_k=top_k
+        top_k=top_k,
+        source=source,
     )
 
     if not hits:
         return {
-            "answer": "I could not find this in the documents.",
+            "answer":
+                "I could not find this in the documents.",
             "sources": [],
-            "used_context": False
+            "used_context": False,
+            "source_filter": source,
         }
 
-    context = build_context(hits)
+    context = build_context(
+        hits
+    )
 
-    user_prompt = f"""
-CONTEXT:
-{context}
-
-QUESTION:
-{question}
-"""
+    user_prompt = (
+        f"CONTEXT:\n"
+        f"{context}\n\n"
+        f"QUESTION:\n"
+        f"{question}"
+    )
 
     answer = chat(
         SYSTEM_PROMPT,
-        user_prompt
+        user_prompt,
     )
-
-    sources = []
-
-    for i, hit in enumerate(hits, start=1):
-        sources.append({
-            "n": i,
-            "title": hit["title"],
-            "source": hit["source"],
-            "chunk_index": hit["chunk_index"],
-            "score": round(float(hit["score"]), 4)
-        })
 
     return {
         "answer": answer,
-        "sources": sources,
-        "used_context": True
+
+        "sources": [
+            {
+                "n": i,
+                "title": hit["title"],
+                "source": hit["source"],
+                "chunk_index":
+                    hit["chunk_index"],
+                "score": round(
+                    float(hit["score"]),
+                    4,
+                ),
+            }
+            for i, hit in enumerate(
+                hits,
+                start=1,
+            )
+        ],
+
+        "used_context": True,
+
+        "source_filter": source,
     }

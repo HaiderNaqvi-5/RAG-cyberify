@@ -1,0 +1,1660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nova Resume Builder</title>
+
+    <style>
+        :root {
+            --bg: #f4f6f8;
+            --panel: #ffffff;
+            --panel-soft: #fafafa;
+            --border: #dddddd;
+            --text: #111111;
+            --muted: #666666;
+            --muted-light: #aaaaaa;
+            --agent-bg: #eef1f5;
+            --radius: 14px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+        }
+
+        body {
+            overflow: hidden;
+            background: var(--bg);
+            color: var(--text);
+            font-family: Arial, sans-serif;
+        }
+
+        button,
+        input {
+            font: inherit;
+        }
+
+        .app {
+            display: grid;
+            grid-template-columns: minmax(0, 2fr) minmax(320px, 1fr);
+            width: 100%;
+            height: 100vh;
+            background: var(--panel);
+        }
+
+        .chat-section {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            height: 100vh;
+            border-right: 1px solid var(--border);
+        }
+
+        .header {
+            flex-shrink: 0;
+            padding: 24px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .header h2 {
+            margin: 0;
+            font-size: 28px;
+        }
+
+        .header p {
+            margin: 5px 0 0;
+            color: var(--muted);
+        }
+
+        .messages {
+            flex: 1;
+            min-height: 0;
+            padding: 24px;
+            overflow-x: hidden;
+            overflow-y: auto;
+            scroll-behavior: smooth;
+        }
+
+        .message {
+            width: fit-content;
+            max-width: 75%;
+            margin-bottom: 15px;
+            padding: 14px 18px;
+            border-radius: var(--radius);
+            font-size: 16px;
+            line-height: 1.5;
+            overflow-wrap: anywhere;
+            white-space: pre-wrap;
+        }
+
+        .agent {
+            margin-right: auto;
+            background: var(--agent-bg);
+        }
+
+        .user {
+            margin-left: auto;
+            background: var(--text);
+            color: var(--panel);
+        }
+
+        .input-area {
+            display: flex;
+            flex-shrink: 0;
+            gap: 10px;
+            width: 100%;
+            padding: 16px;
+            border-top: 1px solid var(--border);
+            background: var(--panel);
+        }
+
+        .input-area input {
+            flex: 1;
+            min-width: 0;
+            padding: 13px 15px;
+            border: 1px solid #cccccc;
+            border-radius: 8px;
+            outline: none;
+        }
+
+        .input-area input:focus {
+            border-color: #555555;
+        }
+
+        .input-area button {
+            padding: 13px 22px;
+            border: 0;
+            border-radius: 8px;
+            background: var(--text);
+            color: var(--panel);
+            cursor: pointer;
+        }
+
+        .input-area button:disabled,
+        .input-area input:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .progress {
+            height: 100vh;
+            padding: 28px;
+            overflow-y: auto;
+            background: var(--panel-soft);
+        }
+
+        .progress h3 {
+            margin: 0 0 28px;
+            font-size: 24px;
+        }
+
+        .field {
+            margin-bottom: 22px;
+        }
+
+        .field-label {
+            margin-bottom: 5px;
+            color: #777777;
+            font-size: 14px;
+        }
+
+        .field-value {
+            font-size: 17px;
+            font-weight: 700;
+            overflow-wrap: anywhere;
+            white-space: pre-wrap;
+        }
+
+        .field-value.empty {
+            color: var(--muted-light);
+            font-weight: 400;
+        }
+
+        .status {
+            margin-top: 28px;
+            padding-top: 18px;
+            border-top: 1px solid var(--border);
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .resume-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+            margin-bottom: 15px;
+        }
+
+        .action-button,
+        .action-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 12px 18px;
+            border-radius: 8px;
+            font-size: 15px;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .action-button {
+            border: 0;
+            background: var(--text);
+            color: var(--panel);
+        }
+        .choice-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 14px;
+}
+
+    .choice-button {
+    padding: 10px 16px;
+    border: 1px solid #d0d5dd;
+    border-radius: 10px;
+    background: white;
+    cursor: pointer;
+    font-size: 14px;
+    transition: 0.2s;
+}
+
+.choice-button:hover {
+    border-color: #667085;
+    transform: translateY(-1px);
+}
+
+.choice-button.selected {
+    border-color: #111827;
+    background: #111827;
+    color: white;
+}
+
+        .action-link {
+            border: 1px solid var(--text);
+            background: var(--panel);
+            color: var(--text);
+        }
+
+        .action-button:hover,
+        .action-link:hover {
+            opacity: 0.8;
+        }
+
+
+        .signature-card {
+            width: min(100%, 620px);
+            margin: 10px 0 18px;
+            padding: 18px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            background: var(--panel-soft);
+        }
+
+        .signature-card h4 {
+            margin: 0 0 6px;
+            font-size: 16px;
+        }
+
+        .signature-help {
+            margin: 0 0 12px;
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .signature-canvas-wrap {
+            width: 100%;
+            overflow: hidden;
+            border: 1px solid #cfd4dc;
+            border-radius: 10px;
+            background: #ffffff;
+        }
+
+        .signature-canvas {
+            display: block;
+            width: 100%;
+            height: 180px;
+            touch-action: none;
+            cursor: crosshair;
+        }
+
+        .signature-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .signature-status {
+            min-height: 18px;
+            margin-top: 10px;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        @media (max-width: 900px) {
+            .app {
+                grid-template-columns: minmax(0, 1.5fr) minmax(280px, 1fr);
+            }
+
+            .message {
+                max-width: 85%;
+            }
+        }
+
+        @media (max-width: 700px) {
+            body {
+                overflow-y: auto;
+            }
+
+            .app {
+                display: flex;
+                flex-direction: column;
+                height: auto;
+                min-height: 100vh;
+            }
+
+            .chat-section {
+                height: 75vh;
+                min-height: 500px;
+                border-right: 0;
+                border-bottom: 1px solid var(--border);
+            }
+
+            .progress {
+                height: auto;
+                min-height: 300px;
+                overflow: visible;
+            }
+
+            .message {
+                max-width: 90%;
+            }
+        }
+
+        @media (max-width: 450px) {
+            .header {
+                padding: 18px;
+            }
+
+            .header h2 {
+                font-size: 23px;
+            }
+
+            .messages {
+                padding: 16px;
+            }
+
+            .message {
+                max-width: 95%;
+                font-size: 15px;
+            }
+
+            .input-area {
+                padding: 10px;
+            }
+
+            .input-area button {
+                padding: 12px 15px;
+            }
+
+            .progress {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <main class="app">
+        <section class="chat-section">
+            <header class="header">
+                <h2>Nova</h2>
+                <p>Your AI Resume Assistant</p>
+            </header>
+
+            <div
+                class="messages"
+                id="messages"
+                aria-live="polite"
+                aria-label="Conversation"
+            ></div>
+
+            <form class="input-area" id="answerForm">
+                <input
+                    id="answerInput"
+                    type="text"
+                    placeholder="Type your answer..."
+                    autocomplete="off"
+                    aria-label="Your answer"
+                >
+
+                <button id="sendButton" type="submit">
+                    Send
+                </button>
+            </form>
+        </section>
+
+        <aside class="progress">
+            <h3>Your Resume</h3>
+
+            <div class="field">
+                <div class="field-label">Name</div>
+                <div
+                    class="field-value empty"
+                    id="nameValue"
+                >
+                    Not provided
+                </div>
+            </div>
+
+            <div class="field">
+                <div class="field-label">Email</div>
+                <div
+                    class="field-value empty"
+                    id="emailValue"
+                >
+                    Not provided
+                </div>
+            </div>
+
+            <div class="field">
+                <div class="field-label">Phone</div>
+                <div
+                    class="field-value empty"
+                    id="phoneValue"
+                >
+                    Not provided
+                </div>
+            </div>
+
+            <div class="field">
+                <div class="field-label">Location</div>
+                <div
+                    class="field-value empty"
+                    id="locationValue"
+                >
+                    Not provided
+                </div>
+            </div>
+
+            <div class="field">
+                <div class="field-label">Target Field</div>
+                <div
+                    class="field-value empty"
+                    id="fieldValue"
+                >
+                    Not provided
+                </div>
+            </div>
+
+            <div class="field">
+                <div class="field-label">Education</div>
+                <div
+                    class="field-value empty"
+                    id="educationValue"
+                >
+                    Not provided
+                </div>
+            </div>
+
+            <div class="field">
+                <div class="field-label">Skills</div>
+                <div
+                    class="field-value empty"
+                    id="skillsValue"
+                >
+                    Not provided
+                </div>
+            </div>
+
+            <div class="field">
+                <div class="field-label">Experience</div>
+                <div
+                    class="field-value empty"
+                    id="experienceValue"
+                >
+                    Not provided
+                </div>
+            </div>
+
+            <div class="field">
+                <div class="field-label">Projects</div>
+                <div
+                    class="field-value empty"
+                    id="projectsValue"
+                >
+                    Not provided
+                </div>
+            </div>
+
+            <div class="field">
+                <div class="field-label">Experience Level</div>
+                <div
+                    class="field-value empty"
+                    id="experience_levelValue"
+                >
+                    Not provided
+                </div>
+            </div>
+
+            <div class="field">
+                <div class="field-label">Employment Status</div>
+                <div
+                    class="field-value empty"
+                    id="employment_statusValue"
+                >
+                    Not provided
+                </div>
+            </div>
+
+            <div class="status" id="statusText">
+                Resume information collection in progress.
+            </div>
+        </aside>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/signature_pad@5.1.4/dist/signature_pad.umd.min.js"></script>
+
+    <script>
+        const API_ENDPOINT =
+            "/api/resume/generate-document";
+
+        const resumeData = {
+    name: "",
+    email: "",
+    phone: "",
+    location: "",
+    field: "",
+    education: "",
+    skills: "",
+    experience: "",
+    projects: "",
+
+    experience_level: "",
+    employment_status: ""
+};
+
+       const questions = [
+    {
+        key: "name",
+        text: "What is your full name?",
+        type: "text"
+    },
+
+    {
+        key: "email",
+        text: "What is your email address?",
+        type: "text"
+    },
+
+    {
+        key: "phone",
+        text: "What is your phone number?",
+        type: "text"
+    },
+
+    {
+        key: "location",
+        text: "Where are you located?",
+        type: "text"
+    },
+
+    {
+        key: "field",
+        text: "What field or role are you targeting?",
+        type: "text"
+    },
+
+    {
+        key: "education",
+        text: "Tell me about your education.",
+        type: "text"
+    },
+
+    {
+        key: "skills",
+        text: "What are your main skills?",
+        type: "text"
+    },
+
+    {
+        key: "experience",
+        text: "Tell me about your experience.",
+        type: "text"
+    },
+
+    {
+        key: "projects",
+        text: "Tell me about your projects.",
+        type: "text"
+    },
+
+    {
+        key: "experience_level",
+        text: "What is your experience level?",
+        type: "choice",
+        choices: [
+            {
+                label: "Student",
+                value: "student"
+            },
+            {
+                label: "Entry Level",
+                value: "entry_level"
+            },
+            {
+                label: "Mid Level",
+                value: "mid_level"
+            },
+            {
+                label: "Senior",
+                value: "senior"
+            }
+        ]
+    },
+
+    {
+        key: "employment_status",
+        text: "What is your current employment status?",
+        type: "choice",
+        choices: [
+            {
+                label: "Studying",
+                value: "studying"
+            },
+            {
+                label: "Employed",
+                value: "employed"
+            },
+            {
+                label: "Unemployed",
+                value: "unemployed"
+            }
+        ]
+    }
+];
+        let currentQuestionIndex = 0;
+        let isSubmitting = false;
+
+        const messages =
+            document.getElementById("messages");
+
+        const input =
+            document.getElementById("answerInput");
+
+        const sendButton =
+            document.getElementById("sendButton");
+
+        const answerForm =
+            document.getElementById("answerForm");
+
+        const statusText =
+            document.getElementById("statusText");
+
+
+        function addMessage(text, sender) {
+            const message =
+                document.createElement("div");
+
+            message.className =
+                `message ${sender}`;
+
+            message.textContent = text;
+
+            messages.appendChild(message);
+
+            messages.scrollTop =
+                messages.scrollHeight;
+        }
+
+
+        function updateField(field, value) {
+            const element =
+                document.getElementById(
+                    `${field}Value`
+                );
+
+            if (!element) {
+                return;
+            }
+
+            element.textContent =
+                value || "Not provided";
+
+            element.classList.toggle(
+                "empty",
+                !value
+            );
+        }
+
+
+        function setInputState(disabled) {
+            input.disabled = disabled;
+            sendButton.disabled = disabled;
+        }
+
+
+        function getCurrentQuestion() {
+            return questions[
+                currentQuestionIndex
+            ];
+        }
+
+
+        function renderChoices(question) {
+            const container =
+                document.createElement("div");
+
+            container.className =
+                "choice-container";
+
+            question.choices.forEach(
+                function (choice) {
+                    const button =
+                        document.createElement("button");
+
+                    button.type = "button";
+                    button.className =
+                        "choice-button";
+                    button.textContent =
+                        choice.label;
+
+                    button.addEventListener(
+                        "click",
+                        function () {
+                            submitChoice(
+                                question,
+                                choice,
+                                container
+                            );
+                        }
+                    );
+
+                    container.appendChild(
+                        button
+                    );
+                }
+            );
+
+            return container;
+        }
+
+
+        function submitChoice(
+            question,
+            choice,
+            container
+        ) {
+            if (
+                isSubmitting ||
+                question !== getCurrentQuestion()
+            ) {
+                return;
+            }
+
+            const buttons =
+                container.querySelectorAll(
+                    ".choice-button"
+                );
+
+            buttons.forEach(
+                function (button) {
+                    button.disabled = true;
+                }
+            );
+
+            resumeData[
+                question.key
+            ] = choice.value;
+
+            addMessage(
+                choice.label,
+                "user"
+            );
+
+            updateField(
+                question.key,
+                choice.label
+            );
+
+            currentQuestionIndex += 1;
+
+            if (
+                currentQuestionIndex >=
+                questions.length
+            ) {
+                finishCollection();
+                return;
+            }
+
+            askCurrentQuestion();
+        }
+
+
+        function askCurrentQuestion() {
+            const question =
+                getCurrentQuestion();
+
+            if (!question) {
+                finishCollection();
+                return;
+            }
+
+            addMessage(
+                question.text,
+                "agent"
+            );
+
+            if (
+                question.type === "choice"
+            ) {
+                setInputState(true);
+                input.value = "";
+                input.placeholder =
+                    "Select an option above";
+
+                const choiceElement =
+                    renderChoices(
+                        question
+                    );
+
+                messages.appendChild(
+                    choiceElement
+                );
+
+                messages.scrollTop =
+                    messages.scrollHeight;
+
+                return;
+            }
+
+            setInputState(false);
+            input.placeholder =
+                "Type your answer...";
+            input.focus();
+        }
+
+        function validateAnswer(
+            field,
+            value
+        ) {
+            if (!value) {
+                return (
+                    "Please enter an answer before continuing."
+                );
+            }
+
+            if (field === "email") {
+                const emailPattern =
+                    /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+                if (
+                    !emailPattern.test(value)
+                ) {
+                    return (
+                        "Please enter a valid email address."
+                    );
+                }
+            }
+
+            if (field === "phone") {
+                const cleaned =
+                    value.replace(
+                        /[\s\-\(\)]/g,
+                        ""
+                    );
+
+                const localPattern =
+                    /^03\d{9}$/;
+
+                const internationalPattern =
+                    /^\+923\d{9}$/;
+
+                if (
+                    !localPattern.test(cleaned) &&
+                    !internationalPattern.test(cleaned)
+                ) {
+                    return (
+                        "Please enter a valid Pakistani mobile number. " +
+                        "Example: 03123456751 or +923124234567."
+                    );
+                }
+            }
+
+            return null;
+        }
+
+
+        function storeResumeForEditor(
+            result
+        ) {
+            const resumeForEditor = {
+                name: resumeData.name || "",
+                email: resumeData.email || "",
+                phone: resumeData.phone || "",
+                location: resumeData.location || "",
+                professional_title:
+                    result.resume?.professional_title || "",
+                summary:
+                    result.resume?.summary || "",
+                skills:
+                    result.resume?.skills || [],
+                experience:
+                    result.resume?.experience || "",
+                projects:
+                    result.resume?.projects || [],
+                education:
+                    result.resume?.education || ""
+            };
+
+            sessionStorage.setItem(
+                "novaGeneratedResume",
+                JSON.stringify(resumeForEditor)
+            );
+        }
+
+
+
+        function resizeSignatureCanvas(
+            canvas,
+            signaturePad
+        ) {
+            const savedData =
+                !signaturePad.isEmpty()
+                    ? signaturePad.toData()
+                    : null;
+
+            const ratio =
+                Math.max(
+                    window.devicePixelRatio || 1,
+                    1
+                );
+
+            const displayWidth =
+                canvas.offsetWidth || 560;
+
+            const displayHeight = 180;
+
+            canvas.width =
+                Math.floor(
+                    displayWidth * ratio
+                );
+
+            canvas.height =
+                Math.floor(
+                    displayHeight * ratio
+                );
+
+            const context =
+                canvas.getContext("2d");
+
+            context.setTransform(
+                ratio,
+                0,
+                0,
+                ratio,
+                0,
+                0
+            );
+
+            if (
+                savedData &&
+                savedData.length
+            ) {
+                signaturePad.fromData(
+                    savedData
+                );
+            }
+        }
+
+
+        function showSignatureStep(
+            result
+        ) {
+            addMessage(
+                "Would you like to add an e-signature to this resume?",
+                "agent"
+            );
+
+            const choiceContainer =
+                document.createElement("div");
+
+            choiceContainer.className =
+                "choice-container";
+
+            const addButton =
+                document.createElement("button");
+
+            addButton.type = "button";
+            addButton.className =
+                "choice-button";
+            addButton.textContent =
+                "Add E-Signature";
+
+            const skipButton =
+                document.createElement("button");
+
+            skipButton.type = "button";
+            skipButton.className =
+                "choice-button";
+            skipButton.textContent =
+                "Skip for now";
+
+            choiceContainer.appendChild(
+                addButton
+            );
+
+            choiceContainer.appendChild(
+                skipButton
+            );
+
+            messages.appendChild(
+                choiceContainer
+            );
+
+            messages.scrollTop =
+                messages.scrollHeight;
+
+            addButton.addEventListener(
+                "click",
+                function () {
+                    addButton.disabled = true;
+                    skipButton.disabled = true;
+
+                    addButton.classList.add(
+                        "selected"
+                    );
+
+                    addMessage(
+                        "Add E-Signature",
+                        "user"
+                    );
+
+                    renderSignaturePad(
+                        result
+                    );
+                }
+            );
+
+            skipButton.addEventListener(
+                "click",
+                function () {
+                    addButton.disabled = true;
+                    skipButton.disabled = true;
+
+                    skipButton.classList.add(
+                        "selected"
+                    );
+
+                    addMessage(
+                        "Skip for now",
+                        "user"
+                    );
+
+                    addMessage(
+                        "No problem. You can continue to edit or download your resume.",
+                        "agent"
+                    );
+
+                    showResumeActions(
+                        result
+                    );
+
+                    statusText.textContent =
+                        "✓ Resume generated successfully.";
+                }
+            );
+        }
+
+
+        function renderSignaturePad(
+            result
+        ) {
+            if (
+                typeof SignaturePad ===
+                "undefined"
+            ) {
+                addMessage(
+                    "The signature library could not be loaded. You can still edit or download your resume.",
+                    "agent"
+                );
+
+                showResumeActions(
+                    result
+                );
+
+                return;
+            }
+
+            const card =
+                document.createElement("div");
+
+            card.className =
+                "signature-card";
+
+            const title =
+                document.createElement("h4");
+
+            title.textContent =
+                "Draw your signature";
+
+            const help =
+                document.createElement("p");
+
+            help.className =
+                "signature-help";
+
+            help.textContent =
+                "Use your mouse, trackpad, or touchscreen. Your signature will be saved as a PNG linked to this generated resume.";
+
+            const canvasWrap =
+                document.createElement("div");
+
+            canvasWrap.className =
+                "signature-canvas-wrap";
+
+            const canvas =
+                document.createElement(
+                    "canvas"
+                );
+
+            canvas.className =
+                "signature-canvas";
+
+            canvasWrap.appendChild(
+                canvas
+            );
+
+            const buttonRow =
+                document.createElement("div");
+
+            buttonRow.className =
+                "signature-buttons";
+
+            const clearButton =
+                document.createElement(
+                    "button"
+                );
+
+            clearButton.type = "button";
+            clearButton.className =
+                "action-link";
+            clearButton.textContent =
+                "Clear";
+
+            const saveButton =
+                document.createElement(
+                    "button"
+                );
+
+            saveButton.type = "button";
+            saveButton.className =
+                "action-button";
+            saveButton.textContent =
+                "Confirm Signature";
+
+            const status =
+                document.createElement("div");
+
+            status.className =
+                "signature-status";
+
+            status.textContent =
+                "Draw your signature before confirming.";
+
+            buttonRow.appendChild(
+                clearButton
+            );
+
+            buttonRow.appendChild(
+                saveButton
+            );
+
+            card.appendChild(title);
+            card.appendChild(help);
+            card.appendChild(
+                canvasWrap
+            );
+            card.appendChild(
+                buttonRow
+            );
+            card.appendChild(status);
+
+            messages.appendChild(card);
+
+            messages.scrollTop =
+                messages.scrollHeight;
+
+            const signaturePad =
+                new SignaturePad(
+                    canvas,
+                    {
+                        backgroundColor:
+                            "rgb(255, 255, 255)",
+                        penColor:
+                            "rgb(17, 17, 17)"
+                    }
+                );
+
+            resizeSignatureCanvas(
+                canvas,
+                signaturePad
+            );
+
+            clearButton.addEventListener(
+                "click",
+                function () {
+                    signaturePad.clear();
+
+                    status.textContent =
+                        "Signature cleared. Draw a new signature.";
+                }
+            );
+
+            saveButton.addEventListener(
+                "click",
+                async function () {
+                    if (
+                        signaturePad.isEmpty()
+                    ) {
+                        status.textContent =
+                            "Please draw your signature before confirming.";
+
+                        return;
+                    }
+
+                    if (!result.filename) {
+                        status.textContent =
+                            "The generated resume filename is missing.";
+
+                        return;
+                    }
+
+                    const signatureData =
+                        signaturePad.toDataURL(
+                            "image/png"
+                        );
+
+                    saveButton.disabled =
+                        true;
+
+                    clearButton.disabled =
+                        true;
+
+                    status.textContent =
+                        "Saving signature...";
+
+                    try {
+                        const response =
+                            await fetch(
+                                "/api/signature/upload",
+                                {
+                                    method:
+                                        "POST",
+
+                                    headers: {
+                                        "Content-Type":
+                                            "application/json"
+                                    },
+
+                                    body:
+                                        JSON.stringify(
+                                            {
+                                                filename:
+                                                    result.filename,
+
+                                                signature_data:
+                                                    signatureData
+                                            }
+                                        )
+                                }
+                            );
+
+                        let uploadResult;
+
+                        try {
+                            uploadResult =
+                                await response.json();
+                        } catch {
+                            throw new Error(
+                                "The server returned an invalid response."
+                            );
+                        }
+
+                        if (!response.ok) {
+                            const detail =
+                                Array.isArray(
+                                    uploadResult
+                                        ?.detail
+                                )
+                                    ? uploadResult
+                                        .detail
+                                        .map(
+                                            item =>
+                                                item.msg
+                                        )
+                                        .join(
+                                            ", "
+                                        )
+                                    : uploadResult
+                                        ?.detail;
+
+                            throw new Error(
+                                detail ||
+                                `Server returned ${response.status}.`
+                            );
+                        }
+
+                        if (
+                            !uploadResult
+                                ?.success
+                        ) {
+                            throw new Error(
+                                "Signature upload did not complete."
+                            );
+                        }
+
+                        status.textContent =
+                            "✓ Signature saved successfully.";
+
+                        addMessage(
+                            "Your e-signature has been saved successfully.",
+                            "agent"
+                        );
+
+                        showResumeActions(
+                            result
+                        );
+
+                        statusText.textContent =
+                            "✓ Resume generated and e-signature saved.";
+
+                    } catch (error) {
+                        console.error(
+                            "Signature upload failed:",
+                            error
+                        );
+
+                        status.textContent =
+                            "Could not save signature: " +
+                            error.message;
+
+                        saveButton.disabled =
+                            false;
+
+                        clearButton.disabled =
+                            false;
+                    }
+                }
+            );
+        }
+
+
+        function showResumeActions(
+            result
+        ) {
+            const actions =
+                document.createElement("div");
+
+            actions.className =
+                "resume-actions";
+
+            const editorButton =
+                document.createElement("button");
+
+            editorButton.type =
+                "button";
+
+            editorButton.className =
+                "action-button";
+
+            editorButton.textContent =
+                "Edit Resume";
+
+            editorButton.addEventListener(
+                "click",
+                function () {
+                    storeResumeForEditor(result);
+
+                    window.location.href =
+                        "/static/resume-editor.html?filename=" +
+                        encodeURIComponent(result.filename);
+                }
+            );
+
+            const downloadLink =
+                document.createElement("a");
+
+            downloadLink.className =
+                "action-link";
+
+            downloadLink.textContent =
+                "Download DOCX";
+
+            downloadLink.href =
+                result.file_url;
+
+            actions.appendChild(
+                editorButton
+            );
+
+            actions.appendChild(
+                downloadLink
+            );
+
+            messages.appendChild(actions);
+
+            messages.scrollTop =
+                messages.scrollHeight;
+        }
+
+
+        async function finishCollection() {
+            if (isSubmitting) {
+                return;
+            }
+
+            isSubmitting = true;
+
+            setInputState(true);
+
+            addMessage(
+                `Perfect, ${resumeData.name}. I have everything I need. Nova is now generating your resume...`,
+                "agent"
+            );
+
+            statusText.textContent =
+                "Generating your professional resume...";
+
+            try {
+                const response =
+                    await fetch(
+                        API_ENDPOINT,
+                        {
+                            method: "POST",
+
+                            headers: {
+                                "Content-Type":
+                                    "application/json"
+                            },
+
+                            body:
+                                JSON.stringify(
+                                    resumeData
+                                )
+                        }
+                    );
+
+                let result;
+
+                try {
+                    result =
+                        await response.json();
+                } catch {
+                    throw new Error(
+                        "The server returned an invalid response."
+                    );
+                }
+
+                if (!response.ok) {
+                    let detail =
+                        result?.detail;
+
+                    if (
+                        typeof detail === "object" &&
+                        detail !== null
+                    ) {
+                        detail =
+                            detail.message ||
+                            JSON.stringify(detail);
+                    }
+
+                    throw new Error(
+                        detail ||
+                        `Server returned ${response.status}.`
+                    );
+                }
+
+                if (!result?.success) {
+                    if (
+                        result
+                            ?.missing_fields
+                            ?.length
+                    ) {
+                        throw new Error(
+                            "Missing fields: " +
+                            result
+                                .missing_fields
+                                .join(", ")
+                        );
+                    }
+
+                    throw new Error(
+                        "Resume generation did not complete."
+                    );
+                }
+
+                if (
+                    !result.filename ||
+                    !result.file_url ||
+                    !result.resume
+                ) {
+                    throw new Error(
+                        "The server did not return the generated resume information."
+                    );
+                }
+
+                addMessage(
+                    `Your resume is ready, ${resumeData.name}!`,
+                    "agent"
+                );
+
+                if (
+                    result.resume
+                        ?.professional_title
+                ) {
+                    addMessage(
+                        `Professional Title: ${result.resume.professional_title}`,
+                        "agent"
+                    );
+                }
+
+                if (
+                    result.resume
+                        ?.summary
+                ) {
+                    addMessage(
+                        `Professional Summary: ${result.resume.summary}`,
+                        "agent"
+                    );
+                }
+
+                storeResumeForEditor(
+                    result
+                );
+
+                showSignatureStep(
+                    result
+                );
+
+                statusText.textContent =
+                    "Resume generated. E-signature step pending.";
+
+                console.log(
+                    "Generated resume:",
+                    result
+                );
+
+            } catch (error) {
+                console.error(
+                    "Resume generation failed:",
+                    error
+                );
+
+                addMessage(
+                    `I couldn't generate your resume. ${error.message}`,
+                    "agent"
+                );
+
+                statusText.textContent =
+                    "Resume generation failed.";
+
+                isSubmitting = false;
+
+                setInputState(false);
+
+                input.focus();
+            }
+        }
+
+
+        function submitAnswer() {
+            if (isSubmitting) {
+                return;
+            }
+
+            const question =
+                getCurrentQuestion();
+
+            if (!question) {
+                return;
+            }
+
+            if (
+                question.type === "choice"
+            ) {
+                return;
+            }
+
+            const answer =
+                input.value.trim();
+
+            const validationError =
+                validateAnswer(
+                    question.key,
+                    answer
+                );
+
+            if (validationError) {
+                addMessage(
+                    validationError,
+                    "agent"
+                );
+
+                input.focus();
+                return;
+            }
+
+            addMessage(
+                answer,
+                "user"
+            );
+
+            resumeData[
+                question.key
+            ] = answer;
+
+            updateField(
+                question.key,
+                answer
+            );
+
+            input.value = "";
+
+            currentQuestionIndex += 1;
+
+            if (
+                currentQuestionIndex >=
+                questions.length
+            ) {
+                finishCollection();
+                return;
+            }
+
+            askCurrentQuestion();
+        }
+
+        answerForm.addEventListener(
+            "submit",
+            function (event) {
+                event.preventDefault();
+
+                submitAnswer();
+            }
+        );
+
+
+        askCurrentQuestion();
+    </script>
+</body>
+</html>
